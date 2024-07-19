@@ -294,3 +294,8 @@ ngx-gallery ::ng-deep ngx-gallery-preview .ngx-gallery-arrow {
     /* your styles */
 }
 ```
+
+- Build package
+ng build ngx-gallery
+cd dist/ngx-gallery
+npm publish
