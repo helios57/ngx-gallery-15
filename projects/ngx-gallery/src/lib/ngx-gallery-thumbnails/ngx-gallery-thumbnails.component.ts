@@ -5,9 +5,10 @@ import { NgxGalleryHelperService } from '../ngx-gallery-helper.service';
 import { NgxGalleryOrder } from '../ngx-gallery-order.model';
 
 @Component({
-  selector: 'ngx-gallery-thumbnails',
-  templateUrl: './ngx-gallery-thumbnails.component.html',
-  styleUrls: ['./ngx-gallery-thumbnails.component.scss']
+    selector: 'ngx-gallery-thumbnails',
+    templateUrl: './ngx-gallery-thumbnails.component.html',
+    styleUrls: ['./ngx-gallery-thumbnails.component.scss'],
+    standalone: false
 })
 export class NgxGalleryThumbnailsComponent implements OnChanges {
 

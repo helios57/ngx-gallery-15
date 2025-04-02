@@ -1,10 +1,11 @@
 import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
-  selector: 'ngx-gallery-action',
-  templateUrl: './ngx-gallery-action.component.html',
-  styleUrls: ['./ngx-gallery-action.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'ngx-gallery-action',
+    templateUrl: './ngx-gallery-action.component.html',
+    styleUrls: ['./ngx-gallery-action.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class NgxGalleryActionComponent {
   @Input() icon: string;

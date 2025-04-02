@@ -6,9 +6,10 @@ import { NgxGalleryHelperService } from '../ngx-gallery-helper.service';
 import { NgxGalleryAnimation } from '../ngx-gallery-animation.model';
 
 @Component({
-  selector: 'ngx-gallery-image',
-  templateUrl: './ngx-gallery-image.component.html',
-  styleUrls: ['./ngx-gallery-image.component.scss']
+    selector: 'ngx-gallery-image',
+    templateUrl: './ngx-gallery-image.component.html',
+    styleUrls: ['./ngx-gallery-image.component.scss'],
+    standalone: false
 })
 export class NgxGalleryImageComponent implements OnInit, OnChanges {
   @Input() images: NgxGalleryOrderedImage[];

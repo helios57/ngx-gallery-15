@@ -1,9 +1,10 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
-  selector: 'ngx-gallery-arrows',
-  templateUrl: './ngx-gallery-arrows.component.html',
-  styleUrls: ['./ngx-gallery-arrows.component.scss']
+    selector: 'ngx-gallery-arrows',
+    templateUrl: './ngx-gallery-arrows.component.html',
+    styleUrls: ['./ngx-gallery-arrows.component.scss'],
+    standalone: false
 })
 export class NgxGalleryArrowsComponent{
   @Input() prevDisabled: boolean;

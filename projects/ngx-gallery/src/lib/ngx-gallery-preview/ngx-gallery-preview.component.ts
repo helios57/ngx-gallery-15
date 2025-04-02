@@ -4,9 +4,10 @@ import { NgxGalleryAction } from '../ngx-gallery-action.model';
 import { NgxGalleryHelperService } from '../ngx-gallery-helper.service';
 
 @Component({
-  selector: 'ngx-gallery-preview',
-  templateUrl: './ngx-gallery-preview.component.html',
-  styleUrls: ['./ngx-gallery-preview.component.scss']
+    selector: 'ngx-gallery-preview',
+    templateUrl: './ngx-gallery-preview.component.html',
+    styleUrls: ['./ngx-gallery-preview.component.scss'],
+    standalone: false
 })
 export class NgxGalleryPreviewComponent implements OnInit, OnChanges {
 
