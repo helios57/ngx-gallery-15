@@ -174,7 +174,7 @@ jobs:
 
       - name: Enable auto-merge for this PR
         if: steps.check_angular.outputs.angular_update == 'true'
-        run: gh pr merge --auto --merge "$PR_URL"
+        run: gh pr merge --auto --rebase "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
