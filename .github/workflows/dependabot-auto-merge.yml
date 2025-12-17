@@ -11,7 +11,7 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: github.actor == 'dependabot[bot]' && !contains(github.event.pull_request.title, '@angular') && !contains(github.event.pull_request.title, 'zone.js') && !contains(github.event.pull_request.title, 'typescript')
     steps:
       - name: Enable auto-merge for Dependabot PRs
         run: gh pr merge --auto --rebase "$PR_URL"
