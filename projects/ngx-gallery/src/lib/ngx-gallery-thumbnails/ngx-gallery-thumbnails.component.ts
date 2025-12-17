@@ -85,7 +85,7 @@ export class NgxGalleryThumbnailsComponent implements OnChanges {
 
       if (this.remainingCount) {
           return this.images.slice(0, this.rows * this.columns);
-      } 
+      }
       else if (this.lazyLoading && this.order != NgxGalleryOrder.Row) {
           let stopIndex = 0;
 
@@ -103,7 +103,7 @@ export class NgxGalleryThumbnailsComponent implements OnChanges {
           }
 
           return this.images.slice(0, stopIndex);
-      } 
+      }
       else {
           return this.images;
       }
@@ -248,8 +248,8 @@ export class NgxGalleryThumbnailsComponent implements OnChanges {
       }
   }
 
-  getSafeUrl(image: string): SafeStyle {
-      return this.sanitization.bypassSecurityTrustStyle(this.helperService.getBackgroundUrl(image));
+  getSafeUrl(image: string | SafeResourceUrl): SafeStyle {
+      return this.sanitization.bypassSecurityTrustStyle(this.helperService.getBackgroundUrl(image as string));
   }
 
   private getThumbnailPosition(index: number, count: number): SafeStyle {

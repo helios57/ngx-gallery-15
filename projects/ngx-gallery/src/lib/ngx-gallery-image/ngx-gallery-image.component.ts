@@ -1,7 +1,7 @@
 import { Component, OnInit, OnChanges, Input, Output, EventEmitter, ElementRef, SimpleChanges, HostListener } from '@angular/core';
 import { NgxGalleryOrderedImage } from '../ngx-gallery-ordered-image.model';
 import { NgxGalleryAction } from '../ngx-gallery-action.model';
-import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
+import { DomSanitizer, SafeStyle, SafeResourceUrl } from '@angular/platform-browser';
 import { NgxGalleryHelperService } from '../ngx-gallery-helper.service';
 import { NgxGalleryAnimation } from '../ngx-gallery-animation.model';
 
@@ -204,7 +204,7 @@ export class NgxGalleryImageComponent implements OnInit, OnChanges {
       }
   }
 
-  getSafeUrl(image: string): SafeStyle {
-      return this.sanitization.bypassSecurityTrustStyle(this.helperService.getBackgroundUrl(image));
+  getSafeUrl(image: string | SafeResourceUrl): SafeStyle {
+      return this.sanitization.bypassSecurityTrustStyle(this.helperService.getBackgroundUrl(image as string));
   }
 }
