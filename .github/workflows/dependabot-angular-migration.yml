@@ -48,16 +48,36 @@ jobs:
           # then run 'ng update' to apply the same update Dependabot wanted, but with migrations.
 
           # Get the target version from the current package.json (updated by Dependabot)
-          CORE_VERSION=$(node -p "require('./package.json').dependencies['@angular/core']")
+          TARGET_CORE_VERSION=$(node -p "require('./package.json').dependencies['@angular/core']")
           CLI_VERSION=$(node -p "require('./package.json').devDependencies['@angular/cli'] || require('./package.json').dependencies['@angular/cli']")
 
           if [ -z "$CLI_VERSION" ] || [ "$CLI_VERSION" == "undefined" ]; then
-            CLI_VERSION=$CORE_VERSION
+            CLI_VERSION=$TARGET_CORE_VERSION
           fi
 
-          echo "Targeting @angular/core@$CORE_VERSION and @angular/cli@$CLI_VERSION"
+          # Get the current version from the base branch
+          git checkout origin/${{ github.base_ref }} package.json
+          CURRENT_CORE_VERSION=$(node -p "require('./package.json').dependencies['@angular/core']")
 
-          # Revert to base branch state
+          # Re-apply the changes to package.json (back to Dependabot's version)
+          git checkout HEAD package.json
+
+          # Extract major versions
+          CURRENT_MAJOR=$(echo $CURRENT_CORE_VERSION | sed 's/[^0-9.]//g' | cut -d. -f1)
+          TARGET_MAJOR=$(echo $TARGET_CORE_VERSION | sed 's/[^0-9.]//g' | cut -d. -f1)
+
+          echo "Current Angular Major: $CURRENT_MAJOR (@angular/core@$CURRENT_CORE_VERSION)"
+          echo "Target Angular Major: $TARGET_MAJOR (@angular/core@$TARGET_CORE_VERSION)"
+
+          # Validate that we are only upgrading one major version at a time
+          if [ "$TARGET_MAJOR" -gt "$((CURRENT_MAJOR + 1))" ]; then
+            echo "::error::Attempting to upgrade from Angular $CURRENT_MAJOR to $TARGET_MAJOR. Angular migrations MUST be run for every major version. Please upgrade to Angular $((CURRENT_MAJOR + 1)) first."
+            exit 1
+          fi
+
+          echo "Targeting @angular/core@$TARGET_CORE_VERSION and @angular/cli@$CLI_VERSION"
+
+          # Revert to base branch state for migration execution
           git checkout origin/${{ github.base_ref }} package.json package-lock.json
 
           # Install old dependencies to ensure ng update works correctly
@@ -65,7 +85,7 @@ jobs:
 
           # Run ng update to the target versions. This will run migrations.
           # We use --allow-dirty because we just changed package.json
-          npx ng update @angular/core@$CORE_VERSION @angular/cli@$CLI_VERSION --allow-dirty --force
+          npx ng update @angular/core@$TARGET_CORE_VERSION @angular/cli@$CLI_VERSION --allow-dirty --force
 
       - name: Update Library Version and Create Hotfix Branch on Major Angular Upgrade
         if: steps.check_angular.outputs.angular_update == 'true'

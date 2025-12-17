@@ -41,6 +41,13 @@
     "ng-packagr": "^19.2.1",
     "ngx-deploy-npm": "^4.3.7",
     "ts-node": "~10.9.1",
-    "typescript": "~5.5.3"
+    "typescript": "~5.5.3",
+    "jasmine-core": "~5.5.0",
+    "karma": "~6.4.4",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.1",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "@types/jasmine": "~5.1.4"
   }
 }
