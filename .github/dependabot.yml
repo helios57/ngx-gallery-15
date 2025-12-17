@@ -13,3 +13,17 @@ updates:
           - "rxjs"
           - "tslib"
           - "typescript"
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "bugfix/v19.x"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+          - "zone.js"
+          - "rxjs"
+          - "tslib"
+          - "typescript"
