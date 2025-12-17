@@ -43,46 +43,67 @@ jobs:
       - name: Test
         run: npm run test -- --watch=false --browsers=ChromeHeadless
 
-  tag-version:
+  auto-version:
     needs: [build, test]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master' || startsWith(github.ref_name, 'bugfix/v'))
+    if: >
+      github.event_name == 'push' &&
+      (github.ref_name == 'main' || github.ref_name == 'master' || startsWith(github.ref_name, 'bugfix/v')) &&
+      github.actor != 'github-actions[bot]' &&
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, 'bump version')
     permissions:
       contents: write
-    outputs:
-      new_tag: ${{ steps.check-tag.outputs.new_tag }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check version and tag
-        id: check-tag
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Configure Git
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="v$VERSION"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists."
-            echo "new_tag=" >> $GITHUB_OUTPUT
-          else
-            echo "Creating tag $TAG"
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag "$TAG"
-            git push origin "$TAG"
-            echo "new_tag=$TAG" >> $GITHUB_OUTPUT
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version and push tag
+        run: |
+          # Increment patch version
+          npm version patch --no-git-tag-version
+
+          # Get the new version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          TAG="v$NEW_VERSION"
+          echo "New version: $NEW_VERSION"
+
+          # Update library package.json if it exists
+          if [ -f "projects/ngx-gallery/package.json" ]; then
+            cd projects/ngx-gallery
+            npm pkg set version=$NEW_VERSION
+            cd ../..
+            git add projects/ngx-gallery/package.json
           fi
+
+          # Commit the version bump
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+
+          # Push the commit
+          git push origin ${{ github.ref_name }}
+
+          # Create and push the tag
+          git tag "$TAG"
+          git push origin "$TAG"
 
   publish-npm:
     name: Publish to NPM
-    needs: [build, test, tag-version]
+    needs: [build, test]
     runs-on: ubuntu-latest
-    if: |
-      always() &&
-      needs.build.result == 'success' &&
-      needs.test.result == 'success' &&
-      (needs.tag-version.result == 'success' || needs.tag-version.result == 'skipped') &&
-      (startsWith(github.ref, 'refs/tags/v') || (needs.tag-version.outputs.new_tag != '' && needs.tag-version.outputs.new_tag != null))
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: read
       id-token: write
@@ -105,11 +126,7 @@ jobs:
       - name: Update version and publish
         working-directory: dist/ngx-gallery
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            TAG_VERSION=${GITHUB_REF#refs/tags/}
-          else
-            TAG_VERSION=${{ needs.tag-version.outputs.new_tag }}
-          fi
+          TAG_VERSION=${GITHUB_REF#refs/tags/}
           VERSION=${TAG_VERSION#v}
           echo "Updating version to $VERSION"
           npm pkg set version=$VERSION
