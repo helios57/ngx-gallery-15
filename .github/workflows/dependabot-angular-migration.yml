@@ -121,6 +121,7 @@ jobs:
           npx ng update $UPDATE_CMD --allow-dirty --force
 
       - name: Update Library Version and Create Bugfix Branch on Major Angular Upgrade
+        id: update_version
         if: steps.check_angular.outputs.angular_update == 'true'
         run: |
           # Get the new Angular major version
@@ -186,7 +187,7 @@ jobs:
             fi
 
             # 3. Update root package.json for the NEW major version
-            npm pkg set version=$NEW_LIB_VERSION
+            npm version $NEW_LIB_VERSION --no-git-tag-version
 
             # 4. Update project package.json
             if [ -f "projects/ngx-gallery/package.json" ]; then
@@ -199,15 +200,30 @@ jobs:
 
               cd ../..
             fi
+            echo "version_bumped=true" >> $GITHUB_OUTPUT
           else
             echo "No major version upgrade detected or Angular version is not greater than library version."
+            echo "version_bumped=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump patch version for minor/patch Angular update
+        if: steps.check_angular.outputs.angular_update == 'true' && steps.update_version.outputs.version_bumped != 'true'
+        run: |
+          # Increment patch version
+          npm version patch --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+
+          if [ -f "projects/ngx-gallery/package.json" ]; then
+            cd projects/ngx-gallery
+            npm pkg set version=$NEW_VERSION
+            cd ../..
           fi
 
       - name: Commit migration changes
         if: steps.check_angular.outputs.angular_update == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: apply angular migrations"
+          commit_message: "chore: apply angular migrations and bump version"
           file_pattern: "."
 
       - name: Enable auto-merge for this PR

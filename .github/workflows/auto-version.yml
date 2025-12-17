@@ -1,14 +1,19 @@
-name: Bugfix Auto Versioning
+name: Auto Versioning
 
 on:
   push:
     branches:
+      - 'main'
+      - 'master'
       - 'bugfix/v*'
 
 jobs:
   bump-version:
-    # Avoid running on commits from this workflow itself
-    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
+    # Avoid running on commits from this workflow itself or if version was already bumped
+    if: >
+      github.actor != 'github-actions[bot]' &&
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, 'bump version')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -28,19 +33,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Check if dependencies or package.json changed
-        id: check_changes
-        run: |
-          # We want to bump version if package.json was changed in the push
-          # (which includes dependency updates by Dependabot)
-          if git diff --name-only HEAD^ HEAD | grep -q "package.json"; then
-            echo "should_bump=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_bump=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Bump version and push tag
-        if: steps.check_changes.outputs.should_bump == 'true'
+      - name: Bump version
         run: |
           # Increment patch version without creating a tag yet
           npm version patch --no-git-tag-version
@@ -59,12 +52,8 @@ jobs:
 
           # Commit the version bump
           git add package.json package-lock.json
-          git commit -m "chore: bump bugfix version to $NEW_VERSION [skip ci]"
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
 
-          # Create the tag
-          git tag v$NEW_VERSION
-
-          # Push the commit and the tag
-          # Note: Pushing with GITHUB_TOKEN might not trigger other workflows (like CI/CD tags)
+          # Push the commit
           # A Personal Access Token (PAT) is recommended for this push if it needs to trigger CI.
-          git push origin ${{ github.ref_name }} --tags
+          git push origin ${{ github.ref_name }}

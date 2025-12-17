@@ -1,8 +1,10 @@
 name: Dependabot Auto-Merge
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: ["CI/CD"]
+    types:
+      - completed
 
 permissions:
   pull-requests: write
@@ -11,10 +13,63 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && !contains(github.event.pull_request.title, '@angular') && !contains(github.event.pull_request.title, 'zone.js') && !contains(github.event.pull_request.title, 'typescript')
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]'
     steps:
-      - name: Enable auto-merge for Dependabot PRs
-        run: gh pr merge --auto --rebase "$PR_URL"
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump version and merge
+        run: |
+          # In workflow_run, we need to find the PR number.
+          # The event contains a list of pull_requests.
+          PR_NUMBER=$(node -e "console.log(${{ toJSON(github.event.workflow_run.pull_requests) }}[0].number)")
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" == "undefined" ]; then
+            echo "No PR number found"
+            exit 0
+          fi
+
+          TITLE=$(gh pr view "$PR_NUMBER" --json title --template '{{.title}}')
+          if [[ ! "$TITLE" =~ "@angular" ]] && [[ ! "$TITLE" =~ "zone.js" ]] && [[ ! "$TITLE" =~ "typescript" ]]; then
+            # Checkout the PR branch
+            gh pr checkout "$PR_NUMBER"
+
+            # Check if the last commit is already a version bump to avoid infinite loop
+            LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+            if [[ "$LAST_COMMIT_MSG" =~ "chore: bump version" ]]; then
+              echo "Version already bumped, proceeding to merge"
+            else
+              echo "Bumping patch version"
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+
+              npm version patch --no-git-tag-version
+              NEW_VERSION=$(node -p "require('./package.json').version")
+
+              if [ -f "projects/ngx-gallery/package.json" ]; then
+                cd projects/ngx-gallery
+                npm pkg set version=$NEW_VERSION
+                cd ../..
+                git add projects/ngx-gallery/package.json
+              fi
+
+              git add package.json package-lock.json
+              git commit -m "chore: bump version to $NEW_VERSION"
+              git push origin HEAD
+
+              echo "Version bumped to $NEW_VERSION and pushed. Waiting for next CI run to merge."
+              # We don't merge yet, as we pushed a new commit that needs CI.
+              # But we can enable auto-merge.
+            fi
+
+            gh pr merge --auto --rebase "$PR_NUMBER"
+          else
+            echo "Skipping auto-merge for Angular/Zone.js/TypeScript update"
+          fi
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
