@@ -49,30 +49,40 @@ jobs:
     if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master' || startsWith(github.ref_name, 'bugfix/v'))
     permissions:
       contents: write
+    outputs:
+      new_tag: ${{ steps.check-tag.outputs.new_tag }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Check version and tag
+        id: check-tag
         run: |
           VERSION=$(node -p "require('./package.json').version")
           TAG="v$VERSION"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists."
+            echo "new_tag=" >> $GITHUB_OUTPUT
           else
             echo "Creating tag $TAG"
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git tag "$TAG"
             git push origin "$TAG"
+            echo "new_tag=$TAG" >> $GITHUB_OUTPUT
           fi
 
   publish-npm:
     name: Publish to NPM
-    needs: [build, test]
+    needs: [build, test, tag-version]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: |
+      always() &&
+      needs.build.result == 'success' &&
+      needs.test.result == 'success' &&
+      (needs.tag-version.result == 'success' || needs.tag-version.result == 'skipped') &&
+      (startsWith(github.ref, 'refs/tags/v') || (needs.tag-version.outputs.new_tag != '' && needs.tag-version.outputs.new_tag != null))
     permissions:
       contents: read
       id-token: write
@@ -95,7 +105,11 @@ jobs:
       - name: Update version and publish
         working-directory: dist/ngx-gallery
         run: |
-          TAG_VERSION=${GITHUB_REF#refs/tags/}
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG_VERSION=${GITHUB_REF#refs/tags/}
+          else
+            TAG_VERSION=${{ needs.tag-version.outputs.new_tag }}
+          fi
           VERSION=${TAG_VERSION#v}
           echo "Updating version to $VERSION"
           npm pkg set version=$VERSION
