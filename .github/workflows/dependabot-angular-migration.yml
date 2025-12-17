@@ -119,14 +119,34 @@ jobs:
               echo "Creating new bugfix branch $BUGFIX_BRANCH from ${{ github.base_ref }}"
               # We need to be careful with the token here if we want to push
               git push origin origin/${{ github.base_ref }}:refs/heads/$BUGFIX_BRANCH
+            fi
 
-              # 2. Update dependabot.yml on the base branch to include the new bugfix branch
-              # We temporarily checkout the base branch to update it
-              git checkout origin/${{ github.base_ref }} .github/dependabot.yml
+            # 2. Update dependabot.yml on the base branch to include the new bugfix branch
+            # We temporarily checkout the base branch to update it
+            git checkout origin/${{ github.base_ref }} .github/dependabot.yml
+
+            if grep -q "target-branch: \"$BUGFIX_BRANCH\"" .github/dependabot.yml; then
+              echo "Bugfix branch $BUGFIX_BRANCH already configured in dependabot.yml"
+            else
+              echo "Adding $BUGFIX_BRANCH to dependabot.yml"
+              # Ensure there is a newline before appending
+              [ -n "$(tail -c1 .github/dependabot.yml)" ] && echo "" >> .github/dependabot.yml
 
               # Append the new bugfix branch configuration to dependabot.yml
-              # Use printf to avoid shell interpretation issues
-              printf "\n  - package-ecosystem: \"npm\"\n    directory: \"/\"\n    target-branch: \"$BUGFIX_BRANCH\"\n    schedule:\n      interval: \"daily\"\n    open-pull-requests-limit: 10\n    groups:\n      angular:\n        patterns:\n          - \"@angular/*\"\n          - \"zone.js\"\n          - \"rxjs\"\n          - \"tslib\"\n          - \"typescript\"\n" >> .github/dependabot.yml
+              echo "  - package-ecosystem: \"npm\"" >> .github/dependabot.yml
+              echo "    directory: \"/\"" >> .github/dependabot.yml
+              echo "    target-branch: \"$BUGFIX_BRANCH\"" >> .github/dependabot.yml
+              echo "    schedule:" >> .github/dependabot.yml
+              echo "      interval: \"daily\"" >> .github/dependabot.yml
+              echo "    open-pull-requests-limit: 10" >> .github/dependabot.yml
+              echo "    groups:" >> .github/dependabot.yml
+              echo "      angular:" >> .github/dependabot.yml
+              echo "        patterns:" >> .github/dependabot.yml
+              echo "          - \"@angular/*\"" >> .github/dependabot.yml
+              echo "          - \"zone.js\"" >> .github/dependabot.yml
+              echo "          - \"rxjs\"" >> .github/dependabot.yml
+              echo "          - \"tslib\"" >> .github/dependabot.yml
+              echo "          - \"typescript\"" >> .github/dependabot.yml
 
               # We will commit this change to the current PR branch so it gets merged into main
               git add .github/dependabot.yml
