@@ -68,13 +68,19 @@ jobs:
               git push origin HEAD
 
               echo "Version bumped to $NEW_VERSION and pushed. Waiting for next CI run to merge."
-              # We don't merge yet, as we pushed a new commit that needs CI.
-              # But we can enable auto-merge.
             fi
 
-            gh pr merge --auto --rebase "$PR_NUMBER"
+            echo "Waiting for GitHub to process the state..."
+            sleep 5
+            for i in {1..5}; do
+              echo "Attempt $i: Enabling auto-merge..."
+              gh pr merge --auto --rebase "$PR_NUMBER" && break || {
+                echo "Attempt $i failed. Waiting before retry..."
+                sleep 15
+              }
+            done
           else
             echo "Skipping auto-merge for Angular/Zone.js/TypeScript update"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

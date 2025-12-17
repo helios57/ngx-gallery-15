@@ -223,14 +223,24 @@ jobs:
 
       - name: Commit migration changes
         if: steps.check_angular.outputs.angular_update == 'true'
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore: apply angular migrations and bump version"
           file_pattern: "."
 
       - name: Enable auto-merge for this PR
         if: steps.check_angular.outputs.angular_update == 'true'
-        run: gh pr merge --auto --rebase "$PR_URL"
+        run: |
+          echo "Waiting for GitHub to process the commit..."
+          sleep 10
+          # We use a retry loop because GitHub's API can be inconsistent right after a push
+          for i in {1..5}; do
+            echo "Attempt $i: Enabling auto-merge..."
+            gh pr merge --auto --rebase "$PR_URL" && break || {
+              echo "Attempt $i failed. Waiting before retry..."
+              sleep 15
+            }
+          done
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
