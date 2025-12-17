@@ -27,7 +27,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Check for Angular Update
         id: check_angular
@@ -50,6 +50,9 @@ jobs:
           # Get the target version from the current package.json (updated by Dependabot)
           TARGET_CORE_VERSION=$(node -p "require('./package.json').dependencies['@angular/core']")
           CLI_VERSION=$(node -p "require('./package.json').devDependencies['@angular/cli'] || require('./package.json').dependencies['@angular/cli']")
+          NG_PACKAGR_VERSION=$(node -p "require('./package.json').devDependencies['ng-packagr'] || require('./package.json').dependencies['ng-packagr']")
+          ZONEJS_VERSION=$(node -p "require('./package.json').dependencies['zone.js']")
+          TYPESCRIPT_VERSION=$(node -p "require('./package.json').devDependencies['typescript']")
 
           if [ -z "$CLI_VERSION" ] || [ "$CLI_VERSION" == "undefined" ]; then
             CLI_VERSION=$TARGET_CORE_VERSION
@@ -75,17 +78,46 @@ jobs:
             exit 1
           fi
 
-          echo "Targeting @angular/core@$TARGET_CORE_VERSION and @angular/cli@$CLI_VERSION"
+          # Function to sync a package to the target major if it's ahead
+          sync_version() {
+            local version=$1
+            local target_major=$2
+            if [ ! -z "$version" ] && [ "$version" != "undefined" ]; then
+              local major=$(echo $version | sed 's/[^0-9.]//g' | cut -d. -f1)
+              if [ "$major" -gt "$target_major" ]; then
+                echo "$major is ahead of $target_major. Syncing to @$target_major."
+                echo "$target_major"
+              else
+                echo "$version"
+              fi
+            else
+              echo ""
+            fi
+          }
+
+          NG_PACKAGR_VERSION=$(sync_version "$NG_PACKAGR_VERSION" "$TARGET_MAJOR")
+          ZONEJS_VERSION=$(sync_version "$ZONEJS_VERSION" "$TARGET_MAJOR")
+
+          # TypeScript has complex compatibility, but usually follows major trends or is strictly capped
+          # For now, let's keep it if it's not obviously breaking.
+          # But let's at least include it in ng update if present.
+
+          UPDATE_CMD="@angular/core@$TARGET_CORE_VERSION @angular/cli@$CLI_VERSION"
+          [ ! -z "$NG_PACKAGR_VERSION" ] && UPDATE_CMD="$UPDATE_CMD ng-packagr@$NG_PACKAGR_VERSION"
+          [ ! -z "$ZONEJS_VERSION" ] && UPDATE_CMD="$UPDATE_CMD zone.js@$ZONEJS_VERSION"
+          [ ! -z "$TYPESCRIPT_VERSION" ] && [ "$TYPESCRIPT_VERSION" != "undefined" ] && UPDATE_CMD="$UPDATE_CMD typescript@$TYPESCRIPT_VERSION"
+
+          echo "Targeting $UPDATE_CMD"
 
           # Revert to base branch state for migration execution
           git checkout origin/${{ github.base_ref }} package.json package-lock.json
 
           # Install old dependencies to ensure ng update works correctly
-          npm ci
+          npm install --legacy-peer-deps
 
           # Run ng update to the target versions. This will run migrations.
           # We use --allow-dirty because we just changed package.json
-          npx ng update @angular/core@$TARGET_CORE_VERSION @angular/cli@$CLI_VERSION --allow-dirty --force
+          npx ng update $UPDATE_CMD --allow-dirty --force
 
       - name: Update Library Version and Create Bugfix Branch on Major Angular Upgrade
         if: steps.check_angular.outputs.angular_update == 'true'
@@ -159,6 +191,11 @@ jobs:
             if [ -f "projects/ngx-gallery/package.json" ]; then
               cd projects/ngx-gallery
               npm pkg set version=$NEW_LIB_VERSION
+
+              # Also sync peerDependencies to the new major
+              npm pkg set peerDependencies."@angular/common"="~$NEW_MAJOR_VERSION.0.0"
+              npm pkg set peerDependencies."@angular/core"="~$NEW_MAJOR_VERSION.0.0"
+
               cd ../..
             fi
           else
