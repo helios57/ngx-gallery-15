@@ -1,9 +1,9 @@
-name: Hotfix Auto Versioning
+name: Bugfix Auto Versioning
 
 on:
   push:
     branches:
-      - 'hotfix/v*'
+      - 'bugfix/v*'
 
 jobs:
   bump-version:
@@ -59,7 +59,7 @@ jobs:
 
           # Commit the version bump
           git add package.json package-lock.json
-          git commit -m "chore: bump hotfix version to $NEW_VERSION [skip ci]"
+          git commit -m "chore: bump bugfix version to $NEW_VERSION [skip ci]"
 
           # Create the tag
           git tag v$NEW_VERSION

@@ -2,7 +2,7 @@ name: Dependabot Angular Migration
 
 on:
   pull_request:
-    branches: [ main, master, 'hotfix/v*' ]
+    branches: [ main, master, 'bugfix/v*' ]
 
 permissions:
   contents: write
@@ -87,7 +87,7 @@ jobs:
           # We use --allow-dirty because we just changed package.json
           npx ng update @angular/core@$TARGET_CORE_VERSION @angular/cli@$CLI_VERSION --allow-dirty --force
 
-      - name: Update Library Version and Create Hotfix Branch on Major Angular Upgrade
+      - name: Update Library Version and Create Bugfix Branch on Major Angular Upgrade
         if: steps.check_angular.outputs.angular_update == 'true'
         run: |
           # Get the new Angular major version
@@ -108,25 +108,25 @@ jobs:
             NEW_LIB_VERSION="$NEW_MAJOR_VERSION.0.0"
             echo "Major version upgrade detected. Updating library to $NEW_LIB_VERSION"
 
-            # 1. Create hotfix branch for the OLD major version before we update main
+            # 1. Create bugfix branch for the OLD major version before we update main
             # We create it from the base branch (main/master)
-            HOTFIX_BRANCH="hotfix/v$OLD_MAJOR_LIB_VERSION.x"
+            BUGFIX_BRANCH="bugfix/v$OLD_MAJOR_LIB_VERSION.x"
 
             # Check if branch exists on remote
-            if git ls-remote --exit-code --heads origin $HOTFIX_BRANCH; then
-              echo "Hotfix branch $HOTFIX_BRANCH already exists."
+            if git ls-remote --exit-code --heads origin $BUGFIX_BRANCH; then
+              echo "Bugfix branch $BUGFIX_BRANCH already exists."
             else
-              echo "Creating new hotfix branch $HOTFIX_BRANCH from ${{ github.base_ref }}"
+              echo "Creating new bugfix branch $BUGFIX_BRANCH from ${{ github.base_ref }}"
               # We need to be careful with the token here if we want to push
-              git push origin origin/${{ github.base_ref }}:refs/heads/$HOTFIX_BRANCH
+              git push origin origin/${{ github.base_ref }}:refs/heads/$BUGFIX_BRANCH
 
-              # 2. Update dependabot.yml on the base branch to include the new hotfix branch
+              # 2. Update dependabot.yml on the base branch to include the new bugfix branch
               # We temporarily checkout the base branch to update it
               git checkout origin/${{ github.base_ref }} .github/dependabot.yml
 
-              # Append the new hotfix branch configuration to dependabot.yml
+              # Append the new bugfix branch configuration to dependabot.yml
               # Use printf to avoid shell interpretation issues
-              printf "\n  - package-ecosystem: \"npm\"\n    directory: \"/\"\n    target-branch: \"$HOTFIX_BRANCH\"\n    schedule:\n      interval: \"daily\"\n    open-pull-requests-limit: 10\n    groups:\n      angular:\n        patterns:\n          - \"@angular/*\"\n          - \"zone.js\"\n          - \"rxjs\"\n          - \"tslib\"\n          - \"typescript\"\n" >> .github/dependabot.yml
+              printf "\n  - package-ecosystem: \"npm\"\n    directory: \"/\"\n    target-branch: \"$BUGFIX_BRANCH\"\n    schedule:\n      interval: \"daily\"\n    open-pull-requests-limit: 10\n    groups:\n      angular:\n        patterns:\n          - \"@angular/*\"\n          - \"zone.js\"\n          - \"rxjs\"\n          - \"tslib\"\n          - \"typescript\"\n" >> .github/dependabot.yml
 
               # We will commit this change to the current PR branch so it gets merged into main
               git add .github/dependabot.yml
@@ -151,3 +151,10 @@ jobs:
         with:
           commit_message: "chore: apply angular migrations"
           file_pattern: "."
+
+      - name: Enable auto-merge for this PR
+        if: steps.check_angular.outputs.angular_update == 'true'
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

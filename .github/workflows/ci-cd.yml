@@ -2,11 +2,11 @@ name: CI/CD
 
 on:
   push:
-    branches: [ main, master, 'hotfix/v*' ]
+    branches: [ main, master, 'bugfix/v*' ]
     tags:
       - 'v*'
   pull_request:
-    branches: [ main, master, 'hotfix/v*' ]
+    branches: [ main, master, 'bugfix/v*' ]
 
 jobs:
   build:
