@@ -1,0 +1,70 @@
+name: Hotfix Auto Versioning
+
+on:
+  push:
+    branches:
+      - 'hotfix/v*'
+
+jobs:
+  bump-version:
+    # Avoid running on commits from this workflow itself
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check if dependencies or package.json changed
+        id: check_changes
+        run: |
+          # We want to bump version if package.json was changed in the push
+          # (which includes dependency updates by Dependabot)
+          if git diff --name-only HEAD^ HEAD | grep -q "package.json"; then
+            echo "should_bump=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_bump=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump version and push tag
+        if: steps.check_changes.outputs.should_bump == 'true'
+        run: |
+          # Increment patch version without creating a tag yet
+          npm version patch --no-git-tag-version
+
+          # Get the new version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "New version: $NEW_VERSION"
+
+          # Update library package.json if it exists
+          if [ -f "projects/ngx-gallery/package.json" ]; then
+            cd projects/ngx-gallery
+            npm pkg set version=$NEW_VERSION
+            cd ../..
+            git add projects/ngx-gallery/package.json
+          fi
+
+          # Commit the version bump
+          git add package.json package-lock.json
+          git commit -m "chore: bump hotfix version to $NEW_VERSION [skip ci]"
+
+          # Create the tag
+          git tag v$NEW_VERSION
+
+          # Push the commit and the tag
+          # Note: Pushing with GITHUB_TOKEN might not trigger other workflows (like CI/CD tags)
+          # A Personal Access Token (PAT) is recommended for this push if it needs to trigger CI.
+          git push origin ${{ github.ref_name }} --tags

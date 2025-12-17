@@ -1,0 +1,60 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+          - "zone.js"
+          - "rxjs"
+          - "tslib"
+          - "typescript"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "hotfix/v18.x"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+          - "zone.js"
+          - "rxjs"
+          - "tslib"
+          - "typescript"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "hotfix/v17.x"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+          - "zone.js"
+          - "rxjs"
+          - "tslib"
+          - "typescript"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "hotfix/v16.x"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+          - "zone.js"
+          - "rxjs"
+          - "tslib"
+          - "typescript"

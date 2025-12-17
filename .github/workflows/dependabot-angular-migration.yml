@@ -1,0 +1,133 @@
+name: Dependabot Angular Migration
+
+on:
+  pull_request:
+    branches: [ main, master, 'hotfix/v*' ]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for Angular Update
+        id: check_angular
+        run: |
+          # Check if @angular/core or @angular/cli is being updated in the PR
+          # Dependabot PR titles usually look like "chore(deps): bump @angular/core from X to Y"
+          if echo "${{ github.event.pull_request.title }}" | grep -qi "@angular"; then
+            echo "angular_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "angular_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Angular Migration
+        if: steps.check_angular.outputs.angular_update == 'true'
+        run: |
+          # Dependabot already updated package.json, but didn't run migrations.
+          # To run migrations, we revert package.json/lock to the base branch state,
+          # then run 'ng update' to apply the same update Dependabot wanted, but with migrations.
+
+          # Get the target version from the current package.json (updated by Dependabot)
+          CORE_VERSION=$(node -p "require('./package.json').dependencies['@angular/core']")
+          CLI_VERSION=$(node -p "require('./package.json').devDependencies['@angular/cli'] || require('./package.json').dependencies['@angular/cli']")
+
+          if [ -z "$CLI_VERSION" ] || [ "$CLI_VERSION" == "undefined" ]; then
+            CLI_VERSION=$CORE_VERSION
+          fi
+
+          echo "Targeting @angular/core@$CORE_VERSION and @angular/cli@$CLI_VERSION"
+
+          # Revert to base branch state
+          git checkout origin/${{ github.base_ref }} package.json package-lock.json
+
+          # Install old dependencies to ensure ng update works correctly
+          npm ci
+
+          # Run ng update to the target versions. This will run migrations.
+          # We use --allow-dirty because we just changed package.json
+          npx ng update @angular/core@$CORE_VERSION @angular/cli@$CLI_VERSION --allow-dirty --force
+
+      - name: Update Library Version and Create Hotfix Branch on Major Angular Upgrade
+        if: steps.check_angular.outputs.angular_update == 'true'
+        run: |
+          # Get the new Angular major version
+          NEW_MAJOR_VERSION=$(node -p "require('./package.json').dependencies['@angular/core'].replace(/[^0-9.]/g, '').split('.')[0]")
+
+          # Get the current library version from the base branch (main/master)
+          git checkout origin/${{ github.base_ref }} package.json
+          OLD_LIB_VERSION=$(node -p "require('./package.json').version")
+          OLD_MAJOR_LIB_VERSION=$(echo $OLD_LIB_VERSION | cut -d. -f1)
+
+          # Re-apply the changes to package.json (from the ng update)
+          git checkout HEAD package.json
+
+          echo "Angular New Major: $NEW_MAJOR_VERSION"
+          echo "Library Old Major: $OLD_MAJOR_LIB_VERSION"
+
+          if [ "$NEW_MAJOR_VERSION" -gt "$OLD_MAJOR_LIB_VERSION" ]; then
+            NEW_LIB_VERSION="$NEW_MAJOR_VERSION.0.0"
+            echo "Major version upgrade detected. Updating library to $NEW_LIB_VERSION"
+
+            # 1. Create hotfix branch for the OLD major version before we update main
+            # We create it from the base branch (main/master)
+            HOTFIX_BRANCH="hotfix/v$OLD_MAJOR_LIB_VERSION.x"
+
+            # Check if branch exists on remote
+            if git ls-remote --exit-code --heads origin $HOTFIX_BRANCH; then
+              echo "Hotfix branch $HOTFIX_BRANCH already exists."
+            else
+              echo "Creating new hotfix branch $HOTFIX_BRANCH from ${{ github.base_ref }}"
+              # We need to be careful with the token here if we want to push
+              git push origin origin/${{ github.base_ref }}:refs/heads/$HOTFIX_BRANCH
+
+              # 2. Update dependabot.yml on the base branch to include the new hotfix branch
+              # We temporarily checkout the base branch to update it
+              git checkout origin/${{ github.base_ref }} .github/dependabot.yml
+
+              # Append the new hotfix branch configuration to dependabot.yml
+              # Use printf to avoid shell interpretation issues
+              printf "\n  - package-ecosystem: \"npm\"\n    directory: \"/\"\n    target-branch: \"$HOTFIX_BRANCH\"\n    schedule:\n      interval: \"daily\"\n    open-pull-requests-limit: 10\n    groups:\n      angular:\n        patterns:\n          - \"@angular/*\"\n          - \"zone.js\"\n          - \"rxjs\"\n          - \"tslib\"\n          - \"typescript\"\n" >> .github/dependabot.yml
+
+              # We will commit this change to the current PR branch so it gets merged into main
+              git add .github/dependabot.yml
+            fi
+
+            # 3. Update root package.json for the NEW major version
+            npm pkg set version=$NEW_LIB_VERSION
+
+            # 4. Update project package.json
+            if [ -f "projects/ngx-gallery/package.json" ]; then
+              cd projects/ngx-gallery
+              npm pkg set version=$NEW_LIB_VERSION
+              cd ../..
+            fi
+          else
+            echo "No major version upgrade detected or Angular version is not greater than library version."
+          fi
+
+      - name: Commit migration changes
+        if: steps.check_angular.outputs.angular_update == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: apply angular migrations"
+          file_pattern: "."
