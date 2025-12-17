@@ -32,10 +32,12 @@ jobs:
       - name: Check for Angular Update
         id: check_angular
         run: |
-          # Check if @angular, zone.js or typescript is being updated in the PR
+          # Check if @angular, zone.js or typescript is being updated in the package.json
           # These are excluded from the general auto-merge workflow to ensure migrations run
-          TITLE="${{ github.event.pull_request.title }}"
-          if echo "$TITLE" | grep -qiE "@angular|zone\.js|typescript"; then
+
+          # Get the diff of package.json compared to the base branch
+          # We look for lines starting with + and containing our target packages
+          if git diff origin/${{ github.base_ref }}..HEAD package.json | grep -E "^\+" | grep -qiE "@angular|zone\.js|typescript"; then
             echo "angular_update=true" >> $GITHUB_OUTPUT
           else
             echo "angular_update=false" >> $GITHUB_OUTPUT
