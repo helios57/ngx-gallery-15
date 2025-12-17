@@ -11,7 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v6
       - name: Use Node.js
@@ -50,6 +49,7 @@ jobs:
     if: >
       github.event_name == 'push' &&
       (github.ref_name == 'master' || startsWith(github.ref_name, 'bugfix/')) &&
+      github.actor != 'dependabot[bot]' &&
       github.actor != 'github-actions[bot]' &&
       !contains(github.event.head_commit.message, '[skip ci]') &&
       !contains(github.event.head_commit.message, 'bump version')
