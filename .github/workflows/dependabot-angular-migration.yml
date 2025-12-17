@@ -175,6 +175,17 @@ jobs:
               echo "    schedule:" >> .github/dependabot.yml
               echo "      interval: \"daily\"" >> .github/dependabot.yml
               echo "    open-pull-requests-limit: 10" >> .github/dependabot.yml
+              echo "    ignore:" >> .github/dependabot.yml
+              echo "      - dependency-name: \"@angular/*\"" >> .github/dependabot.yml
+              echo "        update-types: [\"version-update:semver-major\"]" >> .github/dependabot.yml
+              echo "      - dependency-name: \"zone.js\"" >> .github/dependabot.yml
+              echo "        update-types: [\"version-update:semver-major\"]" >> .github/dependabot.yml
+              echo "      - dependency-name: \"rxjs\"" >> .github/dependabot.yml
+              echo "        update-types: [\"version-update:semver-major\"]" >> .github/dependabot.yml
+              echo "      - dependency-name: \"tslib\"" >> .github/dependabot.yml
+              echo "        update-types: [\"version-update:semver-major\"]" >> .github/dependabot.yml
+              echo "      - dependency-name: \"typescript\"" >> .github/dependabot.yml
+              echo "        update-types: [\"version-update:semver-major\"]" >> .github/dependabot.yml
               echo "    groups:" >> .github/dependabot.yml
               echo "      angular:" >> .github/dependabot.yml
               echo "        patterns:" >> .github/dependabot.yml
