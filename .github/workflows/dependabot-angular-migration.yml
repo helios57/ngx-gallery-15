@@ -26,9 +26,6 @@ jobs:
           node-version: '24'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install --force --legacy-peer-deps
-
       - name: Check for Angular Update
         id: check_angular
         run: |
@@ -134,19 +131,24 @@ jobs:
           OLD_LIB_VERSION=$(node -p "require('./package.json').version")
           OLD_MAJOR_LIB_VERSION=$(echo $OLD_LIB_VERSION | cut -d. -f1)
 
+          # Get the old Angular major version from the base branch
+          OLD_ANGULAR_VERSION=$(node -p "require('./package.json').dependencies['@angular/core']")
+          OLD_MAJOR_ANGULAR_VERSION=$(echo $OLD_ANGULAR_VERSION | sed 's/[^0-9.]//g' | cut -d. -f1)
+
           # Re-apply the changes to package.json (from the ng update)
           git checkout HEAD package.json
 
           echo "Angular New Major: $NEW_MAJOR_VERSION"
+          echo "Angular Old Major: $OLD_MAJOR_ANGULAR_VERSION"
           echo "Library Old Major: $OLD_MAJOR_LIB_VERSION"
 
-          if [ "$NEW_MAJOR_VERSION" -gt "$OLD_MAJOR_LIB_VERSION" ]; then
-            NEW_LIB_VERSION="$NEW_MAJOR_VERSION.0.0"
-            echo "Major version upgrade detected. Updating library to $NEW_LIB_VERSION"
+          if [ "$NEW_MAJOR_VERSION" -gt "$OLD_MAJOR_ANGULAR_VERSION" ]; then
+            NEW_LIB_VERSION=$(node -p "require('./package.json').dependencies['@angular/core'].replace(/[^0-9.]/g, '')")
+            echo "Major version upgrade detected. Updating library to $NEW_LIB_VERSION (synced with Angular)"
 
             # 1. Create bugfix branch for the OLD major version before we update main
             # We create it from the base branch (main/master)
-            BUGFIX_BRANCH="bugfix/v$OLD_MAJOR_LIB_VERSION.x"
+            BUGFIX_BRANCH="bugfix/v$OLD_MAJOR_ANGULAR_VERSION.x"
 
             # Check if branch exists on remote
             if git ls-remote --exit-code --heads origin $BUGFIX_BRANCH; then
@@ -219,12 +221,13 @@ jobs:
             echo "version_bumped=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Bump patch version for minor/patch Angular update
+      - name: Bump library version for minor/patch Angular update
         if: steps.check_angular.outputs.angular_update == 'true' && steps.update_version.outputs.version_bumped != 'true'
         run: |
-          # Increment patch version
-          npm version patch --no-git-tag-version
-          NEW_VERSION=$(node -p "require('./package.json').version")
+          # Sync library version to Angular version
+          NEW_VERSION=$(node -p "require('./package.json').dependencies['@angular/core'].replace(/[^0-9.]/g, '')")
+          echo "Syncing library version to Angular version: $NEW_VERSION"
+          npm version $NEW_VERSION --no-git-tag-version
 
           if [ -f "projects/ngx-gallery/package.json" ]; then
             cd projects/ngx-gallery
@@ -242,14 +245,13 @@ jobs:
       - name: Enable auto-merge for this PR
         if: steps.check_angular.outputs.angular_update == 'true'
         run: |
-          echo "Waiting for GitHub to process the commit..."
-          sleep 10
+          echo "Enabling auto-merge..."
           # We use a retry loop because GitHub's API can be inconsistent right after a push
           for i in {1..5}; do
             echo "Attempt $i: Enabling auto-merge..."
             gh pr merge --auto --rebase "$PR_URL" && break || {
               echo "Attempt $i failed. Waiting before retry..."
-              sleep 15
+              sleep 10
             }
           done
         env:
