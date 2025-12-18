@@ -27,7 +27,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm install --force --legacy-peer-deps
 
       - name: Check for Angular Update
         id: check_angular
@@ -116,7 +116,7 @@ jobs:
           git checkout origin/${{ github.base_ref }} package.json package-lock.json
 
           # Install old dependencies to ensure ng update works correctly
-          npm install --legacy-peer-deps
+          npm install --force --legacy-peer-deps
 
           # Run ng update to the target versions. This will run migrations.
           # We use --allow-dirty because we just changed package.json
