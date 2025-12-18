@@ -13,3 +13,28 @@ updates:
           - "rxjs"
           - "tslib"
           - "typescript"
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "bugfix/v19.x"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "@angular/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "zone.js"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "rxjs"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tslib"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+          - "zone.js"
+          - "rxjs"
+          - "tslib"
+          - "typescript"
