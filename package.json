@@ -39,7 +39,7 @@
     "@angular/language-service": "~21.1.1",
     "@types/jasmine": "~5.1.15",
     "@types/node": "^22.12.0",
-    "jasmine-core": "~5.5.0",
+    "jasmine-core": "~6.0.1",
     "karma": "~6.4.4",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.1",
