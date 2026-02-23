@@ -30,11 +30,11 @@
     "font-awesome": "^4.7.0",
     "rxjs": "~7.8.2",
     "tslib": "^2.4.1",
-    "zone.js": "~0.16.0"
+    "zone.js": "~0.16.1"
   },
   "devDependencies": {
-    "@angular/build": "^20.3.16",
-    "@angular/cli": "~20.3.16",
+    "@angular/build": "^20.3.17",
+    "@angular/cli": "~20.3.17",
     "@angular/compiler-cli": "~20.3.16",
     "@angular/language-service": "~20.3.16",
     "@types/jasmine": "~6.0.0",
