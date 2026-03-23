@@ -48,6 +48,6 @@
     "ng-packagr": "^20.3.2",
     "ngx-deploy-npm": "^4.3.7",
     "ts-node": "~10.9.1",
-    "typescript": "~5.9.3"
+    "typescript": "~6.0.2"
   }
 }
