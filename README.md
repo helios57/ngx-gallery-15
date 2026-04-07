@@ -1,6 +1,6 @@
 # NgxGallery
 Angular image gallery plugin
-Based on [NgxGallery](https://github.com/lukasz-galka/ngx-gallery), Compatible with Angular 19+
+Based on [NgxGallery](https://github.com/lukasz-galka/ngx-gallery), Compatible with Angular 21+ (Zoneless Ready)
 
 # Prerequisites
 - [Font Awesome](http://fontawesome.io/) (required for icons)

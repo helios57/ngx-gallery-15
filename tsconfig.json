@@ -11,6 +11,10 @@
     "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "es2015",
+    "strict": false,
+    "noImplicitAny": false,
+    "ignoreDeprecations": "6.0",
+    "strictPropertyInitialization": false,
     "typeRoots": [
       "node_modules/@types"
     ],
