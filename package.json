@@ -32,8 +32,8 @@
     "tslib": "^2.4.1"
   },
   "devDependencies": {
-    "@angular/build": "^21.2.7",
-    "@angular/cli": "~21.2.7",
+    "@angular/build": "^21.2.8",
+    "@angular/cli": "~21.2.8",
     "@angular/compiler-cli": "~21.2.9",
     "@angular/language-service": "~21.2.9",
     "@types/jasmine": "~5.1.15",
@@ -47,6 +47,6 @@
     "ng-packagr": "^21.0.0",
     "ngx-deploy-npm": "^4.3.7",
     "ts-node": "~10.9.1",
-    "typescript": "~6.0.2"
+    "typescript": "~6.0.3"
   }
 }
