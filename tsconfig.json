@@ -13,7 +13,7 @@
     "target": "es2015",
     "strict": false,
     "noImplicitAny": false,
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "strictPropertyInitialization": false,
     "typeRoots": [
       "node_modules/@types"
