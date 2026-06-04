@@ -1,4 +1,4 @@
-import { Component, OnChanges, Input, Output, EventEmitter, ElementRef, SimpleChanges, HostListener } from '@angular/core';
+import { Component, OnChanges, Input, Output, EventEmitter, ElementRef, SimpleChanges, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { SafeResourceUrl, DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { NgxGalleryAction } from '../ngx-gallery-action.model';
 import { NgxGalleryHelperService } from '../ngx-gallery-helper.service';
@@ -8,6 +8,7 @@ import { NgxGalleryOrder } from '../ngx-gallery-order.model';
     selector: 'ngx-gallery-thumbnails',
     templateUrl: './ngx-gallery-thumbnails.component.html',
     styleUrls: ['./ngx-gallery-thumbnails.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class NgxGalleryThumbnailsComponent implements OnChanges {

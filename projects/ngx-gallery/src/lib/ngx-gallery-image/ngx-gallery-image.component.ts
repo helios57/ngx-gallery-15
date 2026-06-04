@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, Input, Output, EventEmitter, ElementRef, SimpleChanges, HostListener } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, EventEmitter, ElementRef, SimpleChanges, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { NgxGalleryOrderedImage } from '../ngx-gallery-ordered-image.model';
 import { NgxGalleryAction } from '../ngx-gallery-action.model';
 import { DomSanitizer, SafeStyle, SafeResourceUrl } from '@angular/platform-browser';
@@ -9,6 +9,7 @@ import { NgxGalleryAnimation } from '../ngx-gallery-animation.model';
     selector: 'ngx-gallery-image',
     templateUrl: './ngx-gallery-image.component.html',
     styleUrls: ['./ngx-gallery-image.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class NgxGalleryImageComponent implements OnInit, OnChanges {

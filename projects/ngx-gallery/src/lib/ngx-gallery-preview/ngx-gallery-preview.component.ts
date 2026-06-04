@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, OnChanges, Output, EventEmitter, ViewChild, ElementRef, ChangeDetectorRef, SimpleChanges, HostListener, Renderer2 } from '@angular/core';
+import { Component, OnInit, Input, OnChanges, Output, EventEmitter, ViewChild, ElementRef, ChangeDetectorRef, SimpleChanges, HostListener, Renderer2, ChangeDetectionStrategy } from '@angular/core';
 import { SafeResourceUrl, SafeUrl, DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { NgxGalleryAction } from '../ngx-gallery-action.model';
 import { NgxGalleryHelperService } from '../ngx-gallery-helper.service';
@@ -7,6 +7,7 @@ import { NgxGalleryHelperService } from '../ngx-gallery-helper.service';
     selector: 'ngx-gallery-preview',
     templateUrl: './ngx-gallery-preview.component.html',
     styleUrls: ['./ngx-gallery-preview.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class NgxGalleryPreviewComponent implements OnInit, OnChanges {
