@@ -32,8 +32,8 @@
     "tslib": "^2.4.1"
   },
   "devDependencies": {
-    "@angular/build": "^21.2.19",
-    "@angular/cli": "~21.2.19",
+    "@angular/build": "^21.2.20",
+    "@angular/cli": "~21.2.20",
     "@angular/compiler-cli": "~21.2.19",
     "@angular/language-service": "~21.2.19",
     "@types/jasmine": "~5.1.15",
