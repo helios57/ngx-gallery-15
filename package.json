@@ -36,7 +36,7 @@
     "@angular/cli": "~21.2.24",
     "@angular/compiler-cli": "~21.2.24",
     "@angular/language-service": "~21.2.24",
-    "@types/jasmine": "~5.1.15",
+    "@types/jasmine": "~7.0.0",
     "@types/node": "^22.12.0",
     "jasmine-core": "~6.0.1",
     "karma": "~6.4.4",
